@@ -99,6 +99,13 @@
         .time-badge { background: #ecf0f1; color: #7f8c8d; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; border: 1px solid #bdc3c7; display: inline-flex; align-items: center; gap: 5px;}
         .time-badge i { font-size: 0.8rem; }
 
+        /* ESTILOS DA FOTO */
+        .foto-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; padding: 10px; border: 1px dashed #ccc; border-radius: 5px; background: #fafafa; }
+        .foto-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; background-color: #eee; margin-bottom: 10px; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn-foto { background: #34495e; color: white; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: inline-block; }
+        input[type="file"] { display: none; }
+        .avatar-table { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd; vertical-align: middle; margin-right: 10px; }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .loading { text-align: center; padding: 20px; font-style: italic; color: #666; }
@@ -203,6 +210,14 @@
                     <h2 id="titulo-form-visitante"><i class="fas fa-user-plus"></i> Cadastrar Visitante</h2>
                     <form id="form-visitante">
                         <input type="hidden" id="visitante-id-edit" value="">
+                        
+                        <div class="foto-container">
+                            <img id="vis-preview" class="foto-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E">
+                            <label for="vis-foto-input" class="btn-foto"><i class="fas fa-camera"></i> Tirar Foto / Enviar</label>
+                            <input type="file" id="vis-foto-input" accept="image/*" capture="environment">
+                            <input type="hidden" id="vis-foto-base64">
+                            <small style="margin-top:5px; color:#666; font-size:0.75rem;">Clique para capturar</small>
+                        </div>
                         <div class="form-grid">
                             <input type="text" id="vis-nome" placeholder="Nome Completo" required>
                             <input type="text" id="vis-doc" placeholder="Documento (RG/CPF)" required>
@@ -307,7 +322,7 @@
         let frota = [];
         let visitantes = [];
 
-        // --- SISTEMA DE LOGIN COM MEMÓRIA (PERSISTÊNCIA F5) ---
+        // --- SISTEMA DE LOGIN PADRÃO (SIMPLIFICADO PARA EVITAR ERROS) ---
         const CREDENCIAIS = {
             'admin': { pass: 'admin2451', role: 'admin', nome: 'Administrador' },
             'zeladoria': { pass: 'zeladoria', role: 'zeladoria', nome: 'Zeladoria' },
@@ -456,15 +471,11 @@
         window.renderizarApenasDemandas = function() {
             const filtroMes = document.getElementById('filtro-mes-demanda').value; 
             const filtroStatus = document.getElementById('filtro-status-demanda').value;
-            
-            // NOVO: Filtro de Texto
             const filtroTexto = document.getElementById('filtro-texto-demanda').value.toLowerCase();
 
             const lista = demandas.filter(d => {
                 const bateData = !filtroMes || d.data.startsWith(filtroMes);
                 const bateStatus = !filtroStatus || d.status === filtroStatus;
-                
-                // NOVO: Verifica se o texto existe em Título, Setor ou Solicitante
                 const textoGeral = (d.titulo + ' ' + d.setor + ' ' + d.solicitante).toLowerCase();
                 const bateTexto = !filtroTexto || textoGeral.includes(filtroTexto);
 
@@ -510,15 +521,52 @@
             } 
         }
 
-        // --- 2. VISITANTES ---
+        // --- 2. VISITANTES E FOTOS ---
+        
+        // Função para ler arquivo e comprimir imagem (Base64)
+        const fileInput = document.getElementById('vis-foto-input');
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Redimensionar para no máximo 500px de largura (Para não pesar o DB)
+                        const maxWidth = 500;
+                        const scale = maxWidth / img.width;
+                        const newWidth = (img.width > maxWidth) ? maxWidth : img.width;
+                        const newHeight = (img.width > maxWidth) ? img.height * scale : img.height;
+
+                        canvas.width = newWidth;
+                        canvas.height = newHeight;
+                        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+                        // Converter para Base64 (JPG qualidade 0.7)
+                        const base64String = canvas.toDataURL('image/jpeg', 0.7);
+                        document.getElementById('vis-foto-base64').value = base64String;
+                        document.getElementById('vis-preview').src = base64String;
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
         const formVis = document.getElementById('form-visitante');
         formVis.addEventListener('submit', (e) => {
             e.preventDefault();
             const idEdicao = document.getElementById('visitante-id-edit').value;
             const id = idEdicao || Date.now();
 
+            const fotoBase64 = document.getElementById('vis-foto-base64').value;
+
             const novoVisitante = {
                 id: id,
+                foto: fotoBase64 || null, // Salva a string da imagem
                 nome: document.getElementById('vis-nome').value,
                 doc: document.getElementById('vis-doc').value,
                 empresa: document.getElementById('vis-empresa').value,
@@ -532,6 +580,10 @@
 
             if(idEdicao) {
                 const ant = visitantes.find(v => v.id == id);
+                // Se o usuário não enviou nova foto, mantém a antiga
+                if (!novoVisitante.foto && ant && ant.foto) {
+                    novoVisitante.foto = ant.foto;
+                }
                 if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) {
                     novoVisitante.saida = new Date().toISOString();
                 } else if (ant && ant.saida) {
@@ -555,6 +607,18 @@
             document.getElementById('vis-empresa').value = v.empresa; document.getElementById('vis-contato').value = v.contato;
             document.getElementById('vis-responsavel').value = v.responsavel; document.getElementById('vis-finalidade').value = v.finalidade;
             document.getElementById('vis-entrada').value = v.entrada;
+            
+            // Carregar Foto
+            const preview = document.getElementById('vis-preview');
+            const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
+            if (v.foto) {
+                preview.src = v.foto;
+                document.getElementById('vis-foto-base64').value = v.foto;
+            } else {
+                preview.src = defaultIcon;
+                document.getElementById('vis-foto-base64').value = "";
+            }
+
             document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-edit"></i> Editando Visitante';
             const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Salvar"; btn.style.background = "var(--edit)";
             document.getElementById('btn-cancel-vis').style.display = "block";
@@ -575,6 +639,10 @@
             document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-user-plus"></i> Cadastrar Visitante';
             const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Registrar Entrada"; btn.style.background = "var(--accent)";
             document.getElementById('btn-cancel-vis').style.display = "none"; document.getElementById('vis-status-edit').style.display="none";
+            
+            // Reset Foto
+            document.getElementById('vis-preview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
+            document.getElementById('vis-foto-base64').value = "";
         }
 
         window.renderizarApenasVisitantes = function() {
@@ -588,6 +656,10 @@
             document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length;
             document.getElementById('dash-visitantes-total').innerText = lista.length;
             const tbody = document.querySelector('#tabela-visitantes tbody'); tbody.innerHTML = '';
+            
+            // Ícone padrão se não tiver foto
+            const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
+
             lista.forEach(v => {
                 const tr = document.createElement('tr');
                 const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>';
@@ -596,7 +668,11 @@
                 const btnBaixa = v.status === 'Ativo' ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa" title="Registrar Saída"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>';
                 let btnExcluir = '';
                 if (currentUserRole === 'admin') btnExcluir = `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`;
-                tr.innerHTML = `<td>${badge}</td><td><strong>${v.nome}</strong><br><small>${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small>${v.doc}</small></td><td>${v.responsavel}<br><small>${v.finalidade}</small></td><td>Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>${btnExcluir}</td>`;
+                
+                // Exibição da foto na tabela
+                const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`;
+
+                tr.innerHTML = `<td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small>${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small>${v.doc}</small></td><td>${v.responsavel}<br><small>${v.finalidade}</small></td><td>Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>${btnExcluir}</td>`;
                 tbody.appendChild(tr);
             });
         }
@@ -723,4 +799,3 @@
     </script>
 </body>
 </html>
-
