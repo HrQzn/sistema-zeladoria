@@ -11,6 +11,7 @@
             --success: #27ae60; --warning: #f39c12; --danger: #c0392b;
             --visitante: #8e44ad; --servidor: #2980b9; --recepcao: #16a085;
             --estacionado: #d35400; --edit: #e67e22; --info: #17a2b8;
+            --evento: #e74c3c;
         }
 
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
@@ -51,6 +52,12 @@
         .card-concluido { border-left-color: var(--success); }
         .card-recepcao { border-left-color: var(--recepcao); }
         .card-estacionado { border-left-color: var(--estacionado); }
+        
+        /* NOVOS CARDS DE EVENTOS */
+        .card-evt-total { border-left-color: #333; }
+        .card-evt-interno { border-left-color: var(--primary); }
+        .card-evt-externo { border-left-color: var(--evento); }
+        .card-evt-publico { border-left-color: var(--success); }
 
         .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 2rem; border-top: 4px solid var(--accent); }
         .card h2 { margin-bottom: 1rem; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
@@ -89,6 +96,8 @@
         .bg-estacionado { background-color: var(--estacionado); } 
         .bg-saiu { background-color: #95a5a6; } 
         .bg-visitante-ativo { background-color: var(--recepcao); }
+        .bg-interno { background-color: var(--primary); }
+        .bg-externo { background-color: var(--evento); }
 
         .action-btn { border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px; color: white; font-size: 0.8rem; }
         .btn-check { background-color: var(--success); }
@@ -138,6 +147,7 @@
             <button id="tab-demandas" class="tab-btn" onclick="switchTab('demandas')"><i class="fas fa-clipboard-list"></i> Demandas</button>
             <button id="tab-visitantes" class="tab-btn" onclick="switchTab('visitantes')"><i class="fas fa-users"></i> Recepção</button>
             <button id="tab-veiculos" class="tab-btn" onclick="switchTab('veiculos')"><i class="fas fa-car"></i> Garagem</button>
+            <button id="tab-eventos" class="tab-btn" onclick="switchTab('eventos')"><i class="fas fa-calendar-alt"></i> Eventos</button>
         </nav>
 
         <main>
@@ -179,9 +189,7 @@
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-demanda" onchange="window.renderizarApenasDemandas()"></div>
-                        
                         <div class="filter-group"><label>Buscar (Serviço/Setor):</label><input type="text" id="filtro-texto-demanda" onkeyup="window.renderizarApenasDemandas()" placeholder="Ex: Lâmpada, Copa..."></div>
-                        
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-demanda" onchange="window.renderizarApenasDemandas()">
                                 <option value="">Todos</option>
@@ -218,6 +226,7 @@
                             <input type="hidden" id="vis-foto-base64">
                             <small style="margin-top:5px; color:#666; font-size:0.75rem;">Clique para capturar</small>
                         </div>
+
                         <div class="form-grid">
                             <input type="text" id="vis-nome" placeholder="Nome Completo" required>
                             <input type="text" id="vis-doc" placeholder="Documento (RG/CPF)" required>
@@ -225,7 +234,7 @@
                             <input type="text" id="vis-contato" placeholder="E-mail / Telefone">
                             <input type="text" id="vis-responsavel" placeholder="Pessoa Responsável (Anfitrião)" required>
                             <input type="text" id="vis-finalidade" placeholder="Finalidade da Visita" required>
-                            <div><label style="font-size:0.8rem">Hora Entrada</label><input type="datetime-local" id="vis-entrada" required></div>
+                            <div><label style="font-size:0.8rem">Hora Entrada (Automático)</label><input type="datetime-local" id="vis-entrada" required></div>
                             <select id="vis-status-edit" style="display:none"><option value="Ativo">Na Empresa</option><option value="Saiu">Saiu</option></select>
                         </div>
                         <div class="btn-container">
@@ -272,7 +281,7 @@
                             <input type="text" id="veiculo-contato" placeholder="Ramal / Contato">
                             <input type="text" id="veiculo-destino" placeholder="Obs / Destino">
                             <div><label style="font-size:0.8rem">KM Entrada</label><input type="number" id="veiculo-km-saida" placeholder="0"></div>
-                            <div><label style="font-size:0.8rem">Hora Entrada</label><input type="datetime-local" id="veiculo-hora-saida" required></div>
+                            <div><label style="font-size:0.8rem">Hora Entrada (Automático)</label><input type="datetime-local" id="veiculo-hora-saida" required></div>
                             <div id="container-status-veiculo" style="display:none"><label style="font-size:0.8rem;color:var(--edit)">Status</label><select id="veiculo-status-edit"><option value="Aberto">Estacionado</option><option value="Fechado">Finalizado</option></select></div>
                         </div>
                         <div class="btn-container">
@@ -295,6 +304,63 @@
                     </div>
                 </div>
             </section>
+
+            <section id="eventos" class="section">
+                <div class="dashboard-panel">
+                    <div class="metric-card card-evt-total">
+                        <div class="metric-info"><h3>Total Eventos</h3><p id="dash-eventos-qtd">...</p></div>
+                        <i class="fas fa-calendar metric-icon"></i>
+                    </div>
+                    <div class="metric-card card-evt-interno">
+                        <div class="metric-info"><h3>Internos</h3><p id="dash-eventos-interno">...</p></div>
+                        <i class="fas fa-building metric-icon" style="color: var(--primary)"></i>
+                    </div>
+                    <div class="metric-card card-evt-externo">
+                        <div class="metric-info"><h3>Externos</h3><p id="dash-eventos-externo">...</p></div>
+                        <i class="fas fa-globe metric-icon" style="color: var(--evento)"></i>
+                    </div>
+                    <div class="metric-card card-evt-publico">
+                        <div class="metric-info"><h3>Público Total</h3><p id="dash-eventos-publico">...</p></div>
+                        <i class="fas fa-users metric-icon" style="color: var(--success)"></i>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 id="titulo-form-evento"><i class="fas fa-calendar-plus"></i> Registrar Evento</h2>
+                    <form id="form-evento">
+                        <input type="hidden" id="evento-id-edit" value="">
+                        <div class="tipo-selector">
+                            <label class="radio-label"><input type="radio" name="tipoEvento" value="Interno" checked> <span style="color: var(--primary)">Interno</span></label>
+                            <label class="radio-label"><input type="radio" name="tipoEvento" value="Externo"> <span style="color: var(--evento)">Externo</span></label>
+                        </div>
+                        <div class="form-grid">
+                            <input type="text" id="evento-nome" placeholder="Nome do Evento / Reunião" required>
+                            <input type="text" id="evento-organizador" placeholder="Organizador / Responsável" required>
+                            <div><label style="font-size:0.8rem">Data do Evento</label><input type="date" id="evento-data" required></div>
+                            <div><label style="font-size:0.8rem">Público Estimado</label><input type="number" id="evento-publico" placeholder="Qtd. Pessoas" required></div>
+                            <input type="text" id="evento-local" placeholder="Local (Ex: Auditório, Sala 2)" required>
+                        </div>
+                        <div class="btn-container">
+                            <button type="submit" class="btn-primary" id="btn-submit-evento" style="background-color: var(--evento)">Salvar Evento</button>
+                            <button type="button" class="btn-cancel" id="btn-cancel-evento" onclick="cancelarEdicaoEvento()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="filter-container">
+                        <div class="filter-group"><label>Filtrar Mês:</label><input type="month" id="filtro-mes-evento" onchange="window.renderizarApenasEventos()"></div>
+                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-evento" onkeyup="window.renderizarApenasEventos()" placeholder="Nome do evento..."></div>
+                    </div>
+                    <div class="table-container">
+                        <table id="tabela-eventos">
+                            <thead><tr><th>Data</th><th>Tipo</th><th>Evento / Local</th><th>Organizador</th><th>Público</th><th>Ações</th></tr></thead>
+                            <tbody><tr><td colspan="6" class="loading">Carregando dados...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 
@@ -321,8 +387,9 @@
         let demandas = [];
         let frota = [];
         let visitantes = [];
+        let eventos = [];
 
-        // --- SISTEMA DE LOGIN PADRÃO (SIMPLIFICADO PARA EVITAR ERROS) ---
+        // --- SISTEMA DE LOGIN PADRÃO ---
         const CREDENCIAIS = {
             'admin': { pass: 'admin2451', role: 'admin', nome: 'Administrador' },
             'zeladoria': { pass: 'zeladoria', role: 'zeladoria', nome: 'Zeladoria' },
@@ -331,7 +398,7 @@
         };
         let currentUserRole = null;
 
-        // 1. VERIFICAÇÃO AUTOMÁTICA AO CARREGAR A PÁGINA
+        // VERIFICAÇÃO AUTOMÁTICA
         const usuarioSalvo = localStorage.getItem('zeladoria_user');
         if (usuarioSalvo) {
             const user = JSON.parse(usuarioSalvo);
@@ -364,11 +431,12 @@
             const tDemandas = document.getElementById('tab-demandas');
             const tVisitantes = document.getElementById('tab-visitantes');
             const tVeiculos = document.getElementById('tab-veiculos');
+            const tEventos = document.getElementById('tab-eventos');
 
             if (userData.role === 'zeladoria') {
                 tVisitantes.classList.add('hidden-tab'); tVeiculos.classList.add('hidden-tab'); window.switchTab('demandas');
             } else if (userData.role === 'portaria') {
-                tDemandas.classList.add('hidden-tab'); window.switchTab('veiculos');
+                tDemandas.classList.add('hidden-tab'); tEventos.classList.add('hidden-tab'); window.switchTab('veiculos');
             } else if (userData.role === 'recepcao') {
                 tDemandas.classList.add('hidden-tab'); tVeiculos.classList.add('hidden-tab'); window.switchTab('visitantes');
             } else { 
@@ -382,9 +450,21 @@
         }
 
         // --- NAVEGAÇÃO E ÚTEIS ---
+        
+        // FUNÇÃO PARA PEGAR DATA/HORA LOCAL CORRETA (FUSO HORÁRIO)
+        function getLocalISO() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            return now.toISOString().slice(0,16);
+        }
+
         document.getElementById('date-display').innerText = new Date().toLocaleDateString('pt-BR');
         document.getElementById('demanda-data').valueAsDate = new Date();
-        document.getElementById('vis-entrada').value = new Date().toISOString().slice(0,16);
+        document.getElementById('evento-data').valueAsDate = new Date();
+        
+        // Aplica hora exata inicial
+        document.getElementById('vis-entrada').value = getLocalISO();
+        document.getElementById('veiculo-hora-saida').value = getLocalISO();
 
         window.switchTab = function(tabId) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -449,7 +529,7 @@
         });
 
         window.editarDemanda = function(id) {
-            const d = demandas.find(item => item.id === id); if (!d) return;
+            const d = demandas.find(item => item.id == id); if (!d) return;
             document.getElementById('demanda-id-edit').value = d.id;
             document.getElementById('demanda-titulo').value = d.titulo; document.getElementById('demanda-setor').value = d.setor;
             document.getElementById('demanda-solicitante').value = d.solicitante; document.getElementById('demanda-prioridade').value = d.prioridade;
@@ -505,7 +585,7 @@
         }
 
         window.avancarStatus = function(id) { 
-            const item = demandas.find(d => d.id === id); 
+            const item = demandas.find(d => d.id == id); 
             if(!item) return;
             let novoStatus = item.status;
             let novaDataFim = item.dataFim;
@@ -523,7 +603,6 @@
 
         // --- 2. VISITANTES E FOTOS ---
         
-        // Função para ler arquivo e comprimir imagem (Base64)
         const fileInput = document.getElementById('vis-foto-input');
         fileInput.addEventListener('change', function(event) {
             const file = event.target.files[0];
@@ -534,18 +613,13 @@
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
-                        
-                        // Redimensionar para no máximo 500px de largura (Para não pesar o DB)
                         const maxWidth = 500;
                         const scale = maxWidth / img.width;
                         const newWidth = (img.width > maxWidth) ? maxWidth : img.width;
                         const newHeight = (img.width > maxWidth) ? img.height * scale : img.height;
-
                         canvas.width = newWidth;
                         canvas.height = newHeight;
                         ctx.drawImage(img, 0, 0, newWidth, newHeight);
-
-                        // Converter para Base64 (JPG qualidade 0.7)
                         const base64String = canvas.toDataURL('image/jpeg', 0.7);
                         document.getElementById('vis-foto-base64').value = base64String;
                         document.getElementById('vis-preview').src = base64String;
@@ -561,12 +635,11 @@
             e.preventDefault();
             const idEdicao = document.getElementById('visitante-id-edit').value;
             const id = idEdicao || Date.now();
-
             const fotoBase64 = document.getElementById('vis-foto-base64').value;
 
             const novoVisitante = {
                 id: id,
-                foto: fotoBase64 || null, // Salva a string da imagem
+                foto: fotoBase64 || null, 
                 nome: document.getElementById('vis-nome').value,
                 doc: document.getElementById('vis-doc').value,
                 empresa: document.getElementById('vis-empresa').value,
@@ -580,7 +653,6 @@
 
             if(idEdicao) {
                 const ant = visitantes.find(v => v.id == id);
-                // Se o usuário não enviou nova foto, mantém a antiga
                 if (!novoVisitante.foto && ant && ant.foto) {
                     novoVisitante.foto = ant.foto;
                 }
@@ -601,14 +673,12 @@
         });
 
         window.editarVisitante = function(id) {
-            const v = visitantes.find(i => i.id === id); if(!v) return;
+            const v = visitantes.find(i => i.id == id); if(!v) return;
             document.getElementById('visitante-id-edit').value = v.id;
             document.getElementById('vis-nome').value = v.nome; document.getElementById('vis-doc').value = v.doc;
             document.getElementById('vis-empresa').value = v.empresa; document.getElementById('vis-contato').value = v.contato;
             document.getElementById('vis-responsavel').value = v.responsavel; document.getElementById('vis-finalidade').value = v.finalidade;
             document.getElementById('vis-entrada').value = v.entrada;
-            
-            // Carregar Foto
             const preview = document.getElementById('vis-preview');
             const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
             if (v.foto) {
@@ -618,7 +688,6 @@
                 preview.src = defaultIcon;
                 document.getElementById('vis-foto-base64').value = "";
             }
-
             document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-edit"></i> Editando Visitante';
             const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Salvar"; btn.style.background = "var(--edit)";
             document.getElementById('btn-cancel-vis').style.display = "block";
@@ -627,7 +696,7 @@
         }
         
         window.deletarVisitante = function(id) {
-            if(confirm('Tem certeza que deseja EXCLUIR este visitante do histórico?')) {
+            if(confirm('Excluir?')) {
                 remove(ref(db, 'visitantes/' + id));
                 if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante();
             }
@@ -635,12 +704,12 @@
 
         window.cancelarEdicaoVisitante = function() {
             document.getElementById('visitante-id-edit').value = ""; formVis.reset();
-            document.getElementById('vis-entrada').value = new Date().toISOString().slice(0,16);
+            // Reseta sempre para a hora atual
+            document.getElementById('vis-entrada').value = getLocalISO();
+            
             document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-user-plus"></i> Cadastrar Visitante';
             const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Registrar Entrada"; btn.style.background = "var(--accent)";
             document.getElementById('btn-cancel-vis').style.display = "none"; document.getElementById('vis-status-edit').style.display="none";
-            
-            // Reset Foto
             document.getElementById('vis-preview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
             document.getElementById('vis-foto-base64').value = "";
         }
@@ -656,10 +725,7 @@
             document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length;
             document.getElementById('dash-visitantes-total').innerText = lista.length;
             const tbody = document.querySelector('#tabela-visitantes tbody'); tbody.innerHTML = '';
-            
-            // Ícone padrão se não tiver foto
             const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
-
             lista.forEach(v => {
                 const tr = document.createElement('tr');
                 const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>';
@@ -668,10 +734,7 @@
                 const btnBaixa = v.status === 'Ativo' ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa" title="Registrar Saída"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>';
                 let btnExcluir = '';
                 if (currentUserRole === 'admin') btnExcluir = `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`;
-                
-                // Exibição da foto na tabela
                 const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`;
-
                 tr.innerHTML = `<td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small>${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small>${v.doc}</small></td><td>${v.responsavel}<br><small>${v.finalidade}</small></td><td>Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>${btnExcluir}</td>`;
                 tbody.appendChild(tr);
             });
@@ -734,7 +797,7 @@
         });
 
         window.editarVeiculo = function(id) {
-            const f = frota.find(i => i.id === id); if (!f) return;
+            const f = frota.find(i => i.id == id); if (!f) return;
             document.getElementById('veiculo-id-edit').value = f.id;
             document.getElementById('veiculo-carro').value = f.carro; document.getElementById('veiculo-motorista').value = f.motorista;
             document.getElementById('veiculo-setor').value = f.setor || ''; document.getElementById('veiculo-contato').value = f.contato || '';
@@ -758,6 +821,9 @@
 
         window.cancelarEdicaoVeiculo = function() {
             document.getElementById('veiculo-id-edit').value = ""; formVeiculo.reset();
+            // Reseta para hora atual
+            document.getElementById('veiculo-hora-saida').value = getLocalISO();
+            
             document.getElementById('titulo-form-veiculo').innerHTML = '<i class="fas fa-parking"></i> Registrar Entrada';
             document.getElementById('btn-cancel-veiculo').style.display = "none"; document.getElementById('container-status-veiculo').style.display = "none";
             document.getElementById('radio-servidor').checked = true; window.atualizarLabels();
@@ -796,6 +862,119 @@
                 update(ref(db, 'frota/' + id), { kmFinal: km, horaFinal: new Date().toISOString(), status: 'Fechado' });
             }
         }
+
+        // --- 4. EVENTOS (NOVO) ---
+        const formEvento = document.getElementById('form-evento');
+        formEvento.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const idEdicao = document.getElementById('evento-id-edit').value;
+            const id = idEdicao || Date.now();
+            
+            const novoEvento = {
+                id: id,
+                tipo: document.querySelector('input[name="tipoEvento"]:checked').value,
+                nome: document.getElementById('evento-nome').value,
+                organizador: document.getElementById('evento-organizador').value,
+                data: document.getElementById('evento-data').value,
+                publico: parseInt(document.getElementById('evento-publico').value) || 0,
+                local: document.getElementById('evento-local').value
+            };
+
+            set(ref(db, 'eventos/' + id), novoEvento)
+                .then(() => { cancelarEdicaoEvento(); })
+                .catch((error) => alert("Erro ao salvar evento: " + error));
+        });
+
+        onValue(ref(db, 'eventos'), (snapshot) => {
+            const data = snapshot.val();
+            eventos = data ? Object.values(data) : [];
+            eventos.sort((a,b) => new Date(b.data) - new Date(a.data)); // Ordenar por data
+            window.renderizarApenasEventos();
+        });
+
+        window.editarEvento = function(id) {
+            const ev = eventos.find(item => item.id == id); if (!ev) return;
+            document.getElementById('evento-id-edit').value = ev.id;
+            document.getElementById('evento-nome').value = ev.nome;
+            document.getElementById('evento-organizador').value = ev.organizador;
+            document.getElementById('evento-data').value = ev.data;
+            document.getElementById('evento-publico').value = ev.publico;
+            document.getElementById('evento-local').value = ev.local;
+            
+            // Selecionar radio button correto
+            const radios = document.getElementsByName('tipoEvento');
+            for(let i=0; i<radios.length; i++) {
+                if(radios[i].value === ev.tipo) radios[i].checked = true;
+            }
+
+            document.getElementById('titulo-form-evento').innerHTML = '<i class="fas fa-edit"></i> Editando Evento';
+            const btn = document.getElementById('btn-submit-evento'); btn.innerText = "Salvar Evento"; btn.style.backgroundColor = "var(--edit)";
+            document.getElementById('btn-cancel-evento').style.display = "block";
+            document.getElementById('eventos').scrollIntoView({behavior: 'smooth'});
+        }
+
+        window.cancelarEdicaoEvento = function() {
+            document.getElementById('evento-id-edit').value = ""; formEvento.reset(); 
+            document.getElementById('evento-data').valueAsDate = new Date();
+            document.getElementById('titulo-form-evento').innerHTML = '<i class="fas fa-calendar-plus"></i> Registrar Evento';
+            const btn = document.getElementById('btn-submit-evento'); btn.innerText = "Salvar Evento"; btn.style.backgroundColor = "var(--evento)";
+            document.getElementById('btn-cancel-evento').style.display = "none";
+        }
+
+        window.deletarEvento = function(id) {
+            if(confirm('Tem certeza que deseja EXCLUIR este evento?')) {
+                remove(ref(db, 'eventos/' + id));
+                if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento();
+            }
+        }
+
+        window.renderizarApenasEventos = function() {
+            const mes = document.getElementById('filtro-mes-evento').value;
+            const busca = document.getElementById('filtro-busca-evento').value.toLowerCase();
+            
+            const lista = eventos.filter(ev => {
+                const bData = !mes || ev.data.startsWith(mes);
+                const bTexto = !busca || (ev.nome + ev.organizador + ev.local).toLowerCase().includes(busca);
+                return bData && bTexto;
+            });
+
+            // Cálculos ATUALIZADOS PARA OS NOVOS CARDS
+            document.getElementById('dash-eventos-qtd').innerText = lista.length;
+            
+            const qtdInterno = lista.filter(e => e.tipo === 'Interno').length;
+            const qtdExterno = lista.filter(e => e.tipo === 'Externo').length;
+            
+            document.getElementById('dash-eventos-interno').innerText = qtdInterno;
+            document.getElementById('dash-eventos-externo').innerText = qtdExterno;
+
+            const totalPublico = lista.reduce((sum, ev) => sum + (parseInt(ev.publico) || 0), 0);
+            document.getElementById('dash-eventos-publico').innerText = totalPublico;
+
+            const tbody = document.querySelector('#tabela-eventos tbody'); tbody.innerHTML = '';
+            
+            lista.forEach(ev => {
+                const tr = document.createElement('tr');
+                const badgeClass = ev.tipo === 'Interno' ? 'bg-interno' : 'bg-externo';
+                const badge = `<span class="badge ${badgeClass}">${ev.tipo}</span>`;
+                
+                let btnExcluir = '';
+                if (currentUserRole === 'admin') btnExcluir = `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
+
+                tr.innerHTML = `
+                    <td>${formatarData(ev.data)}</td>
+                    <td>${badge}</td>
+                    <td><strong>${ev.nome}</strong><br><small>${ev.local}</small></td>
+                    <td>${ev.organizador}</td>
+                    <td><i class="fas fa-user"></i> ${ev.publico}</td>
+                    <td style="min-width:100px">
+                        <button onclick="editarEvento(${ev.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>
+                        ${btnExcluir}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
     </script>
 </body>
 </html>
