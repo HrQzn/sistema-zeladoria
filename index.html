@@ -11,7 +11,7 @@
             --success: #27ae60; --warning: #f39c12; --danger: #c0392b;
             --visitante: #8e44ad; --servidor: #2980b9; --recepcao: #16a085;
             --estacionado: #d35400; --edit: #e67e22; --info: #17a2b8;
-            --evento: #e74c3c;
+            --evento: #e74c3c; --coffee: #6f4e37;
         }
 
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
@@ -76,6 +76,11 @@
         
         input, select, textarea { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; }
         input:focus, select:focus { outline: none; border-color: var(--accent); }
+        
+        /* Checkbox customizado para coffee */
+        .checkbox-wrapper { display: flex; align-items: center; gap: 10px; background: #fdf2e9; padding: 10px; border-radius: 4px; border: 1px solid #e67e22; }
+        .checkbox-wrapper input { width: auto; margin: 0; }
+        .checkbox-wrapper label { font-weight: bold; color: #d35400; cursor: pointer; }
 
         .btn-container { display: flex; gap: 10px; }
         button.btn-primary { background: var(--accent); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.2s; }
@@ -339,6 +344,12 @@
                             <div><label style="font-size:0.8rem">Data do Evento</label><input type="date" id="evento-data" required></div>
                             <div><label style="font-size:0.8rem">Público Estimado</label><input type="number" id="evento-publico" placeholder="Qtd. Pessoas" required></div>
                             <input type="text" id="evento-local" placeholder="Local (Ex: Auditório, Sala 2)" required>
+                            
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="evento-coffee">
+                                <label for="evento-coffee"><i class="fas fa-coffee"></i> Servir Coffee Break?</label>
+                            </div>
+                            <textarea id="evento-obs" placeholder="Observações e Solicitações (Ex: Datashow, Água, Cadeiras extras...)" style="grid-column: 1 / -1; height: 80px; resize: vertical;"></textarea>
                         </div>
                         <div class="btn-container">
                             <button type="submit" class="btn-primary" id="btn-submit-evento" style="background-color: var(--evento)">Salvar Evento</button>
@@ -354,7 +365,7 @@
                     </div>
                     <div class="table-container">
                         <table id="tabela-eventos">
-                            <thead><tr><th>Data</th><th>Tipo</th><th>Evento / Local</th><th>Organizador</th><th>Público</th><th>Ações</th></tr></thead>
+                            <thead><tr><th>Data</th><th>Tipo</th><th>Evento / Local / Obs</th><th>Organizador</th><th>Público</th><th>Ações</th></tr></thead>
                             <tbody><tr><td colspan="6" class="loading">Carregando dados...</td></tr></tbody>
                         </table>
                     </div>
@@ -452,7 +463,7 @@
                 // Recepcao: Vê Visitantes. Oculta Demandas, Veiculos e Eventos.
                 tDemandas.classList.add('hidden-tab'); 
                 tVeiculos.classList.add('hidden-tab'); 
-                tEventos.classList.add('hidden-tab'); // <-- Correção aplicada aqui
+                tEventos.classList.add('hidden-tab');
                 window.switchTab('visitantes');
             } 
             else { 
@@ -880,7 +891,7 @@
             }
         }
 
-        // --- 4. EVENTOS (NOVO) ---
+        // --- 4. EVENTOS (COM NOVOS CAMPOS: COFFEE E OBS) ---
         const formEvento = document.getElementById('form-evento');
         formEvento.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -894,7 +905,10 @@
                 organizador: document.getElementById('evento-organizador').value,
                 data: document.getElementById('evento-data').value,
                 publico: parseInt(document.getElementById('evento-publico').value) || 0,
-                local: document.getElementById('evento-local').value
+                local: document.getElementById('evento-local').value,
+                // Novos campos capturados
+                coffee: document.getElementById('evento-coffee').checked,
+                obs: document.getElementById('evento-obs').value
             };
 
             set(ref(db, 'eventos/' + id), novoEvento)
@@ -918,7 +932,10 @@
             document.getElementById('evento-publico').value = ev.publico;
             document.getElementById('evento-local').value = ev.local;
             
-            // Selecionar radio button correto
+            // Preenche novos campos
+            document.getElementById('evento-coffee').checked = ev.coffee || false;
+            document.getElementById('evento-obs').value = ev.obs || "";
+            
             const radios = document.getElementsByName('tipoEvento');
             for(let i=0; i<radios.length; i++) {
                 if(radios[i].value === ev.tipo) radios[i].checked = true;
@@ -933,6 +950,10 @@
         window.cancelarEdicaoEvento = function() {
             document.getElementById('evento-id-edit').value = ""; formEvento.reset(); 
             document.getElementById('evento-data').valueAsDate = new Date();
+            // Reseta campos manuais
+            document.getElementById('evento-coffee').checked = false;
+            document.getElementById('evento-obs').value = "";
+
             document.getElementById('titulo-form-evento').innerHTML = '<i class="fas fa-calendar-plus"></i> Registrar Evento';
             const btn = document.getElementById('btn-submit-evento'); btn.innerText = "Salvar Evento"; btn.style.backgroundColor = "var(--evento)";
             document.getElementById('btn-cancel-evento').style.display = "none";
@@ -955,15 +976,11 @@
                 return bData && bTexto;
             });
 
-            // Cálculos ATUALIZADOS PARA OS NOVOS CARDS
             document.getElementById('dash-eventos-qtd').innerText = lista.length;
-            
             const qtdInterno = lista.filter(e => e.tipo === 'Interno').length;
             const qtdExterno = lista.filter(e => e.tipo === 'Externo').length;
-            
             document.getElementById('dash-eventos-interno').innerText = qtdInterno;
             document.getElementById('dash-eventos-externo').innerText = qtdExterno;
-
             const totalPublico = lista.reduce((sum, ev) => sum + (parseInt(ev.publico) || 0), 0);
             document.getElementById('dash-eventos-publico').innerText = totalPublico;
 
@@ -974,13 +991,17 @@
                 const badgeClass = ev.tipo === 'Interno' ? 'bg-interno' : 'bg-externo';
                 const badge = `<span class="badge ${badgeClass}">${ev.tipo}</span>`;
                 
+                // Lógica de exibição do ícone de Café e Observações
+                const iconCoffee = ev.coffee ? '<i class="fas fa-coffee" title="Terá Coffee Break" style="color:#6f4e37; margin-left:5px"></i>' : '';
+                const obsText = ev.obs ? `<div style="font-size:0.75rem; color:#666; font-style:italic; margin-top:3px; border-top:1px dashed #eee; padding-top:2px"><i class="fas fa-comment-alt" style="font-size:0.7rem"></i> ${ev.obs}</div>` : '';
+
                 let btnExcluir = '';
                 if (currentUserRole === 'admin') btnExcluir = `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
 
                 tr.innerHTML = `
                     <td>${formatarData(ev.data)}</td>
                     <td>${badge}</td>
-                    <td><strong>${ev.nome}</strong><br><small>${ev.local}</small></td>
+                    <td><strong>${ev.nome}</strong>${iconCoffee}<br><small>${ev.local}</small>${obsText}</td>
                     <td>${ev.organizador}</td>
                     <td><i class="fas fa-user"></i> ${ev.publico}</td>
                     <td style="min-width:100px">
