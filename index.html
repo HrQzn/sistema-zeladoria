@@ -433,13 +433,30 @@
             const tVeiculos = document.getElementById('tab-veiculos');
             const tEventos = document.getElementById('tab-eventos');
 
+            // Limpa estados ocultos anteriores (Importante para logout/login sem refresh)
+            [tDemandas, tVisitantes, tVeiculos, tEventos].forEach(t => t.classList.remove('hidden-tab'));
+
             if (userData.role === 'zeladoria') {
-                tVisitantes.classList.add('hidden-tab'); tVeiculos.classList.add('hidden-tab'); window.switchTab('demandas');
-            } else if (userData.role === 'portaria') {
-                tDemandas.classList.add('hidden-tab'); tEventos.classList.add('hidden-tab'); window.switchTab('veiculos');
-            } else if (userData.role === 'recepcao') {
-                tDemandas.classList.add('hidden-tab'); tVeiculos.classList.add('hidden-tab'); window.switchTab('visitantes');
-            } else { 
+                // Zeladoria: Vê Demandas e Eventos. Oculta Visitantes e Veiculos.
+                tVisitantes.classList.add('hidden-tab'); 
+                tVeiculos.classList.add('hidden-tab'); 
+                window.switchTab('demandas');
+            } 
+            else if (userData.role === 'portaria') {
+                // Portaria: Vê Veiculos (Garagem). Oculta Demandas e Eventos.
+                tDemandas.classList.add('hidden-tab'); 
+                tEventos.classList.add('hidden-tab'); 
+                window.switchTab('veiculos');
+            } 
+            else if (userData.role === 'recepcao') {
+                // Recepcao: Vê Visitantes. Oculta Demandas, Veiculos e Eventos.
+                tDemandas.classList.add('hidden-tab'); 
+                tVeiculos.classList.add('hidden-tab'); 
+                tEventos.classList.add('hidden-tab'); // <-- Correção aplicada aqui
+                window.switchTab('visitantes');
+            } 
+            else { 
+                // Admin: Vê tudo (nenhuma aba oculta).
                 if(!document.querySelector('.section.active')) window.switchTab('demandas');
             }
         }
